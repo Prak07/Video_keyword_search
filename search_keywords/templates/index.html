@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aesthetic Video Upload and Search</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #4a4a4a;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .search-bar {
+            margin-bottom: 30px;
+            display: flex;
+        }
+
+        .search-bar input {
+            flex-grow: 1;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-color: rgb(151, 149, 149);
+            border-radius: 50px 0 0 50px;
+            background-color: #f0f0f0;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 2px #764ba2;
+        }
+
+        .search-bar button {
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 0 50px 50px 0;
+            cursor: pointer;
+        }
+
+        .search-bar button:hover {
+            background-color: #5d3a8f;
+        }
+
+        .video-upload {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+
+        
+        .video-upload label {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #667eea;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .video-upload label:hover {
+            background-color: #5a6fd9;
+        }
+        
+        .upload-button {
+            padding: 8px 20px;
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        .upload-button:hover {
+            background-color: #45a049;
+        }
+        .nav-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .nav-buttons button {
+            padding: 10px 20px;
+            font-size: 14px;
+            background-color: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        .nav-buttons button:hover {
+            background-color: #5d3a8f;
+        }
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-left: 45%;
+            margin-top: 50px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Your Video</h1>
+    <form method="post" name="search">
+        <div class="search-bar" id="search-bar">
+            {% csrf_token %}
+            <input type="text" placeholder="Search video for a keyword..." value="{{value}}" name="search" id="search" required>
+            <button type="submit" id="search_button">Search</button>
+        </div>
+    </form>
+        <div class="video-upload">
+        <form method="post" enctype="multipart/form-data" id="submit_form">
+            {% csrf_token %}
+            {% for field in form %}
+            {{ field }}
+            <button class="upload-button" id="upload-btn" type="submit">Upload</button>    
+            {% endfor %}
+        </form>
+    </div>
+    {% if id or download_id %}
+    <div style="margin-top: 5px;">
+        <div class="loader" id="load"></div>
+        <p id="load_text" style="text-align: center; color:rgb(250, 52, 52) ; font-weight: bold;">Your Request Is Being Processed</p>
+
+        {% if file %}
+            <video id="videoPlayer" width="600" controls>
+                <source src="{{ file }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% else %}
+            <video id="videoPlayer" width="600" autoplay muted>
+                <source src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% endif %}
+    </div>
+{% endif %}
+    <div class="nav-buttons">
+    </div>
+    </div>
+</body>
+<script>
+    const fileInput = document.getElementById('video-file');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileName = document.getElementById('file-name');
+    const searchBar = document.getElementById('search');
+    const searchButton = document.getElementById('search_button');
+    const taskId = "{{ id|default:''}}"; 
+    const taskId2 = "{{ download_id|default:''}}"; 
+    const videoPlayer = document.getElementById('videoPlayer'); // Safely pass the ID, empty string if not present
+    let timestampsInSeconds = [];
+    let currentIndex = 0;
+    searchBar.disabled=true;
+    searchButton.disabled=true;
+    if (taskId) { 
+        videoPlayer.style.display='none'; // Check if taskId is not an empty string or undefined
+        checkStatus(taskId);
+    }
+    function checkStatus(taskId) {
+        // Polling every 3 seconds (3000 ms)
+        const intervalId = setInterval(function() {
+            fetch(`/check_status/${taskId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === true) {
+                    clearInterval(intervalId); // Stop polling if status is true
+                    // Optionally, display the video URL
+                    document.getElementById("videoPlayer").src = data.video_url;
+                    document.getElementById("videoPlayer").removeAttribute("autoplay","muted");
+                    document.getElementById("videoPlayer").setAttribute("controls","controls");
+                    document.getElementById("load").style.display='none';
+                    document.getElementById("load_text").style.display='none';
+                    videoPlayer.style.display='block';
+                    searchBar.disabled=false;
+                    searchButton.disabled=false;
+                } else {
+                    console.log("Video processing not yet complete...");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }, 3000);  // Poll every 3 seconds
+    }
+
+    if (taskId2) { 
+        check_download_Status(taskId2);
+    }
+    function check_download_Status(taskId) {
+        searchBar.disabled=true;
+        searchButton.disabled=true;
+        document.getElementById("load").style.display='none';
+        // Polling every 3 seconds (3000 ms)
+        const intervalId = setInterval(function() {
+            fetch(`/check_download_status/${taskId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === true) {
+                    clearInterval(intervalId); // Stop polling if status is true
+                    // Optionally, display the video URL
+                    let timestamps = [];
+                    try {
+                        timestamps = JSON.parse(data.time);  // Parse the JSON string
+                    } catch (e) {
+                        console.error("Error parsing JSON:", e);
+                    }
+                    if (timestamps!=null && timestamps.length > 0){
+                        timestampsInSeconds = timestamps.map(timeStringToSeconds);
+                        // Function to convert timestamp string (hh:mm:ss) to seconds
+                        function timeStringToSeconds(timeString) {
+                            const [hours, minutes, seconds] = timeString.split(':').map(parseFloat);
+                            return (hours * 3600) + (minutes * 60) + seconds;
+                        }
+                        document.getElementById("load_text").style.display='none';
+                        const navButtonsDiv = document.querySelector('.nav-buttons');
+                        // Create 'Previous' button
+                        const previousButton = document.createElement('button');
+                        previousButton.id = 'previousButton';
+                        previousButton.textContent = 'Previous';
+            
+                        // Create 'Next' button
+                        const nextButton = document.createElement('button');
+                        nextButton.id = 'nextButton';
+                        nextButton.textContent = 'Next';
+            
+                        // Append the buttons to the <div>
+                        navButtonsDiv.appendChild(previousButton);
+                        navButtonsDiv.appendChild(nextButton);
+
+                        if (timestampsInSeconds.length > 0) {
+                            seekToTimestamp(currentIndex);
+                        }
+
+                        function seekToTimestamp(index) {
+                            if (index >= 0 && index < timestampsInSeconds.length) {
+                                videoPlayer.currentTime = timestampsInSeconds[index];
+                            }
+                        }
+                        // Handle Next button click
+                        document.getElementById('nextButton').addEventListener('click', function() {
+                            if (currentIndex < timestampsInSeconds.length - 1) {
+                                currentIndex++;
+                                seekToTimestamp(currentIndex);
+                            }
+                        });
+                    
+                        // Handle Previous button click
+                        document.getElementById('previousButton').addEventListener('click', function() {
+                            if (currentIndex > 0) {
+                                currentIndex--;
+                                seekToTimestamp(currentIndex);
+                            }
+                        });
+                }
+                else{
+                    document.getElementById("load_text").innerText='Nothing Found';
+                }
+                    searchBar.disabled=false;
+                    searchButton.disabled=false;
+                } else {
+                    console.log("Video download processing not yet complete...");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }, 3000);  // Poll every 3 seconds
+    }
+    
+
+
+</script>
+</html>

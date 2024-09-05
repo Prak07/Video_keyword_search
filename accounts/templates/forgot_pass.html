@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password</title>
+    <link href="{% static '/css/forgot_pass.css' %}" type="text/css" rel="stylesheet"/>
+    <style>
+        .alert {
+            width: 290px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        
+        .alert-success {
+            color: #29bb2c;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        
+        .alert-error {
+            color: #fc0b07;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
+    </style>
+</head>
+<body>
+    <div class="forgot-password-container">
+        <h2>Forgot Password</h2>
+        <form id="forgot-password-form" method="post">
+            {% csrf_token %}
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{message}}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% for feild in form %}
+            <div class="input-group">
+                <label>{{feild.label}}</label>
+                {{feild}}
+            </div>
+            {% endfor %}
+            <button type="submit" class="reset-btn">Send Email</button>
+        </form>
+    </div>
+</body>
+</html>
