@@ -94,7 +94,7 @@ def process_video_and_store_subtitle(user):
     try:
         s3_client.download_file(bucket_name,s3_key,local_video_path)
         # Run ccextractor to extract subtitles
-        subtitle_path = 'subtitles.srt'
+        subtitle_path = (local_video_path.split('.')[0])+".srt"
         
         ccextractor_command = ['CCExtractor_win_portable\ccextractorwinfull.exe',local_video_path,'-o', subtitle_path]
         subprocess.run(ccextractor_command, check=True)
