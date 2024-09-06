@@ -49,7 +49,7 @@ def sub(request):
         video = Video.objects.get(username=request.user)
         url = video.video.url
         if request.user.is_authenticated:
-            username=request.user
+            username=request.user.username
         else:
             username="AnonymousUser"
         async_result = search_keyword_in_subtitles.delay(username, keyword)
