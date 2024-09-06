@@ -55,8 +55,6 @@ def sub(request):
         async_result = search_keyword_in_subtitles.delay(username, keyword)
         id = async_result.task_id
         return render(request, "index.html", {"form": form, "download_id": id, "file":url,"value":keyword})
-        # return render(request, "index.html", {"form": form, "file": url, "timestamp": json.dumps(result)})
-
     return render(request, "index.html", {"form": form})
 
 
@@ -90,24 +88,29 @@ def process_video_and_store_subtitle(user):
     bucket_name = "project-video"
     s3_key = video.video.name
     local_video_path = s3_key.split("/")[-1]
-
+    username=user
     try:
         s3_client.download_file(bucket_name,s3_key,local_video_path)
         # Run ccextractor to extract subtitles
         subtitle_path = (local_video_path.split('.')[0])+".srt"
-        
-        ccextractor_command = ['CCExtractor_win_portable\ccextractorwinfull.exe',local_video_path,'-o', subtitle_path]
-        subprocess.run(ccextractor_command, check=True)
+        try:
+            ccextractor_command = ['CCExtractor_win_portable\ccextractorwinfull.exe',local_video_path,'-o', subtitle_path]
+            subprocess.run(ccextractor_command, check=True)
+        except:
+            subtitle_content=" "
         
         # Read extracted subtitles
-        with open(subtitle_path,'r') as subtitle_file:
-            subtitle_content = subtitle_file.read()
-        
+        try:
+            with open(subtitle_path,'r') as subtitle_file:
+                subtitle_content = subtitle_file.read()
+        except:
+            subtitle_content=" "
         subtitle_contents=str(subtitle_content)
         # Store the subtitles in DynamoDB
+        if subtitle_contents=="":
+            subtitle_contents=" "
         table = dynamodb_client.Table('video_subtitle')
-        username=video.username
-        
+
         table.put_item(
             Item={
                 'title': username,  # Partition key (title of the video)
@@ -121,8 +124,7 @@ def process_video_and_store_subtitle(user):
 @shared_task
 def search_keyword_in_subtitles(user, keyword):
     dynamodb_client = boto3.client('dynamodb',aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,region_name=settings.AWS_S3_REGION_NAME)
-    video = Video.objects.get(username=user)
-    username=video.username
+    username=user
     # Retrieve the subtitles from DynamoDB
     response = dynamodb_client.get_item(
         TableName='video_subtitle',

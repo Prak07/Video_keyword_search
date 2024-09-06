@@ -73,6 +73,7 @@ def signup(request):
                     else:    
                         user=Profile.objects.create_user(username=username,email=email,password=password)
                         Profile.save
+                        messages.success(request,"Account created now login to continue")
                         return redirect("/login/")
                 else:
                     messages.error(request,"Passwords doesn't match")

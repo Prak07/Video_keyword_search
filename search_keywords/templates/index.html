@@ -138,11 +138,36 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1vw 3vw;
+            gap: 8px;
+            height: 20px;
+            width: 2vw;
+            border: none;
+            background: #FF342B;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all ease .3s;
+            text-decoration: none;
+          }
+          .button i{
+            font-size:20px;
+            background-color: transparent;
+          }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Upload Your Video</h1>
+        <h2><a class="button" style="background-color: red;" id="Delete" href="/logout/">
+            <i class="ri-logout-box-line"></i>
+            <span class="lable">Logout</span>
+        </a>
+    </h2>
+        <h1>Upload Your Video
+        </h1>
     <form method="post" name="search">
         <div class="search-bar" id="search-bar">
             {% csrf_token %}
