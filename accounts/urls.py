@@ -8,4 +8,5 @@ urlpatterns = [
     path('forgot_pass/',forgot_pass,name="forgot_pass") ,
     path('new_pass/<token>',new_pass,name="new_pass") ,
     path('logout/',logout,name="logout") ,
+    path('guest/',Guest,name="logout") ,
 ]

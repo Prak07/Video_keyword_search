@@ -10,6 +10,8 @@ from django.core.mail import send_mail
 import uuid
 from django.conf import settings
 
+def Guest(request):
+    return redirect("/visub/")
 def login(request):
     if request.user.is_authenticated!=True:
         form=LoginForm()
