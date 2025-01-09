@@ -31,7 +31,7 @@ The Subtitle Keyword Search Website is a web application designed to simplify th
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/subtitle-keyword-search.git
+   git clone https://github.com/Prak07/subtitle-keyword-search.git
    ```
 2. **Navigate to the Project Directory**:
    ```bash
